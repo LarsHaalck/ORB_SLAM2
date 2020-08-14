@@ -434,7 +434,7 @@ void System::SaveKeyFrameTrajectoryAndMap(const string &filename, const string &
     f << fixed;
 
     ofstream fpoints;
-    fpoints.open(tracksfile.c_str());
+    fpoints.open(mapsFile.c_str());
     fpoints << fixed;
 
     for(size_t i=0; i<vpKFs.size(); i++)
