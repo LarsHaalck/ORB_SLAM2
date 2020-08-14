@@ -26,6 +26,8 @@
 #include <pangolin/pangolin.h>
 #include <iomanip>
 
+#include<unistd.h>
+
 namespace ORB_SLAM2
 {
 
@@ -409,6 +411,59 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
         cv::Mat t = pKF->GetCameraCenter();
         f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
           << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+
+    }
+
+    f.close();
+    cout << endl << "trajectory saved!" << endl;
+}
+
+void System::SaveKeyFrameTrajectoryAndMap(const string &filename, const string &mapsFile)
+{
+    cout << endl << "Saving keyframe trajectory to " << filename << " ..." << endl;
+
+    vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+    // Transform all keyframes so that the first keyframe is at the origin.
+    // After a loop closure the first keyframe might not be at the origin.
+    //cv::Mat Two = vpKFs[0]->GetPoseInverse();
+
+    ofstream f;
+    f.open(filename.c_str());
+    f << fixed;
+
+    ofstream fpoints;
+    fpoints.open(tracksfile.c_str());
+    fpoints << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+       // pKF->SetPose(pKF->GetPose()*Two);
+
+        if(pKF->isBad())
+            continue;
+
+        cv::Mat R = pKF->GetRotation().t();
+        vector<float> q = Converter::toQuaternion(R);
+        cv::Mat t = pKF->GetCameraCenter();
+        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
+          << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+
+         for (auto point : pKF->GetMapPoints())
+         {
+            auto coords = point->GetWorldPos();
+            fpoints << setprecision(6)
+                    << pKF->mTimeStamp
+                    << " " << point->mnId
+                    << setprecision(7)
+                    << " " << coords.at<float>(0, 0)
+                    << " " << coords.at<float>(1, 0)
+                    << " " << coords.at<float>(2, 0)
+                    << std::endl;
+        }
 
     }
 
